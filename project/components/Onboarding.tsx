@@ -1,98 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 const questions = [
     {
-        text: "How familiar are you with innovation and entrepreneurship?",
+        text: "How much do you like to innovate?",
         options: [
-            { answer: "Not at all. It’s all new to me.", persona: "clueless" },
-            { answer: "I know a little but don’t know how to start.", persona: "hesitant" },
-            { answer: "I have some experience and am eager to do more.", persona: "motivated" }
+            { answer: "I am happy with the status-quo, but let's see what's possible!", persona: "clueless" },
+            { answer: "I see risk in innovating, but with a worked out concept maybe.", persona: "hesitant" },
+            { answer: "I really want to innovate, but need help in doing so!", persona: "motivated" }
         ]
     },
     {
-        text: "Imagine you come across an exciting new idea. What’s your first thought?",
+        text: "What is your main source of information, when it comes to business?",
         options: [
-            { answer: "I wouldn’t know if it's good or bad.", persona: "clueless" },
-            { answer: "Sounds interesting, but I’d need help making it real.", persona: "hesitant" },
-            { answer: "Awesome! Let’s explore how to build on it!", persona: "motivated" }
+            { answer: "I rely on my business network such as suppliers.", persona: "clueless" },
+            { answer: "I like to visit industry events for new information.", persona: "hesitant" },
+            { answer: "I rely on industry news and magazines ", persona: "motivated" }
         ]
     },
     {
-        text: "3?",
+        text: "How do you usually network?",
         options: [
-            { answer: "I wouldn’t know if it's good or bad.", persona: "clueless" },
-            { answer: "Sounds interesting, but I’d need help making it real.", persona: "hesitant" },
-            { answer: "Awesome! Let’s explore how to build on it!", persona: "motivated" }
-        ]
-    },
-    {
-        text: "4",
-        options: [
-            { answer: "I wouldn’t know if it's good or bad.", persona: "clueless" },
-            { answer: "Sounds interesting, but I’d need help making it real.", persona: "hesitant" },
-            { answer: "Awesome! Let’s explore how to build on it!", persona: "motivated" }
+            { answer: "With phone calls.", persona: "clueless" },
+            { answer: "By Social Media", persona: "hesitant" },
+            { answer: "Through industry associations.", persona: "motivated" }
         ]
     },
 ];
 
 export default function Onboarding() {
-    const [step, setStep] = useState(0);
+    const [step, setStep] = useState(-2); // -2: Welcome, -1: Name, 0: Workplace, then questions
+    const [name, setName] = useState("");
+    const [workplace, setWorkplace] = useState("");
     const [responses, setResponses] = useState({ clueless: 0, hesitant: 0, motivated: 0 });
+
+    const router = useRouter(); // For navigation
 
     const handleAnswer = (persona: keyof typeof responses) => {
         setResponses((prev) => ({ ...prev, [persona]: prev[persona] + 1 }));
-        if (step < questions.length - 1) {
-            setStep(step + 1);
-        } else {
-            determinePersona();
+        setStep((prevStep) => prevStep + 1);
+    };
+
+    useEffect(() => {
+        if (step === questions.length + 1) {
+            // Determine highest persona
+            const highestPersona = Object.keys(responses).reduce((a, b) =>
+                responses[a as keyof typeof responses] > responses[b as keyof typeof responses] ? a : b
+            );
+            // Redirect to results page with persona
+            router.push(`/result?persona=${highestPersona}`);
         }
-    };
+    }, [step, responses, router]);
 
-    const determinePersona = () => {
-        const maxPersona = Object.keys(responses).reduce((a, b) =>
-            responses[a as keyof typeof responses] > responses[b as keyof typeof responses] ? a : b
-        );
-        alert(`Your persona is: ${maxPersona}`);
-    };
-
+    const startQuestions = () => setStep(-1);
+    const handleNameSubmit = () => name.trim() && setStep(0);
+    const handleWorkplaceSubmit = () => workplace.trim() && setStep(1);
 
     return (
-        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-100 to-blue-200 p-4">
+        <div className="flex flex-col h-screen bg-gray p-4">
             <div className="flex flex-row h-full">
-                {/* The left two-thirds */}
-                <div className="flex-2"></div>
+                {/* Left Section (Speech Bubble & Questions) */}
+                <div className="w-2/3 p-8 flex flex-col justify-center">
+                    {/* Speech Bubble */}
+                    <motion.div
+                        className="p-10 bg-white border-4 border-black rounded-3xl shadow-xl text-black text-2xl font-semibold italic w-full"
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        {step === -2 ? (
+                            <div>
+                                <p className="text-3xl font-bold">Hello, I am Olma, your personal guide.</p>
+                                <p className="mt-4 text-xl">
+                                    To provide you with the best help, I’ll ask you a few questions.
+                                </p>
+                                <button
+                                    onClick={startQuestions}
+                                    className="mt-6 w-full bg-blue-500 border-2 border-black text-white text-xl font-bold py-4 px-8 rounded-xl shadow-md hover:bg-blue-600 transition-all"
+                                >
+                                    Start
+                                </button>
+                            </div>
+                        ) : step === -1 ? (
+                            <div>
+                                <p className="text-3xl">Hey! What's your name?</p>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="mt-4 w-full p-3 text-lg border-2 border-black rounded-lg"
+                                    placeholder="Enter your name..."
+                                />
+                                <button
+                                    onClick={handleNameSubmit}
+                                    disabled={!name.trim()}
+                                    className="mt-4 w-full bg-blue-500 border-2 border-black text-white text-xl font-bold py-3 px-6 rounded-xl shadow-md hover:bg-blue-600 transition-all disabled:bg-gray-400"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        ) : step === 0 ? (
+                            <div>
+                                <p className="text-3xl">Where do you work, {name}?</p>
+                                <input
+                                    type="text"
+                                    value={workplace}
+                                    onChange={(e) => setWorkplace(e.target.value)}
+                                    className="mt-4 w-full p-3 text-lg border-2 border-black rounded-lg"
+                                    placeholder="Enter your workplace..."
+                                />
+                                <button
+                                    onClick={handleWorkplaceSubmit}
+                                    disabled={!workplace.trim()}
+                                    className="mt-4 w-full bg-blue-500 border-2 border-black text-white text-xl font-bold py-3 px-6 rounded-xl shadow-md hover:bg-blue-600 transition-all disabled:bg-gray-400"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        ) : step <= questions.length ? (
+                            <div>
+                                <p className="text-3xl">{questions[step - 1].text}</p>
+                            </div>
+                        ) : null}
+                    </motion.div>
 
-                {/* The image container which takes up the right third */}
-                <div className="flex-1 flex justify-center items-center">
-                    <img src="avatar.png" alt="Avatar" className="w-full h-full object-cover"/>
+                    {/* Answer Options */}
+                    {step > 0 && step <= questions.length && (
+                        <div className="mt-8 w-full flex flex-col">
+                            {questions[step - 1].options.map((option, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => handleAnswer(option.persona)}
+                                    className="w-full bg-blue-500 border-2 border-black text-white text-xl font-bold py-4 px-8 rounded-xl shadow-md hover:bg-blue-600 transition-all mb-4"
+                                >
+                                    {option.answer}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Section (Avatar) */}
+                <div className="w-1/3 flex justify-center items-center">
+                    <img src="avatar2.png" alt="Avatar" className="w-full h-full object-cover" />
                 </div>
             </div>
         </div>
     );
-    /**return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-4">
-            <motion.div
-                className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-center"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div className="mb-4">
-                    <img src="/avatar.png" alt="Avatar" className="w-24 h-24 mx-auto" />
-                </div>
-                <p className="text-lg font-semibold mb-4">{questions[step].text}</p>
-                {questions[step].options.map((option, index) => (
-                    <button
-                        key={index}
-                        className="block w-full bg-blue-500 text-white py-2 px-4 rounded-lg mb-2 hover:bg-blue-700 transition"
-                        onClick={() => handleAnswer(option.persona)}
-                    >
-                        {option.answer}
-                    </button>
-                ))}
-            </motion.div>
-        </div>
-    ); */
 }
